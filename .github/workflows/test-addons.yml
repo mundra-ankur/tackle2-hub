@@ -22,6 +22,7 @@ jobs:
         uses: konveyor/tackle2-operator/.github/actions/install-tackle@main
         with:
           tackle-hub-image: tackle2-hub:latest
+          tackle-operator-index-image: quay.io/konveyor/tackle2-operator-index:test
           tackle-image-pull-policy: IfNotPresent
 
       - name: test windup addon
