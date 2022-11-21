@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/auth"
 	"io"
@@ -11,8 +12,21 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	pathlib "path"
 	"time"
 )
+
+const (
+	Accept  = "Accept"
+	AppJson = "application/json"
+)
+
+//
+// Param.
+type Param struct {
+	Key   string
+	Value string
+}
 
 //
 // Client provides a REST client.
@@ -29,14 +43,21 @@ type Client struct {
 
 //
 // Get a resource.
-func (r *Client) Get(path string, object interface{}) (err error) {
+func (r *Client) Get(path string, object interface{}, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
 		request = &http.Request{
 			Header: http.Header{},
 			Method: http.MethodGet,
 			URL:    r.join(path),
 		}
-		request.Header.Set(auth.Header, r.token)
+		request.Header.Set(Accept, AppJson)
+		if len(params) > 0 {
+			q := request.URL.Query()
+			for _, p := range params {
+				q.Add(p.Key, p.Value)
+			}
+			request.URL.RawQuery = q.Encode()
+		}
 		return
 	}
 	reply, err := r.send(request)
@@ -81,7 +102,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 			Body:   ioutil.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(auth.Header, r.token)
+		request.Header.Set(Accept, AppJson)
 		return
 	}
 	reply, err := r.send(request)
@@ -128,7 +149,7 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 			Body:   ioutil.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(auth.Header, r.token)
+		request.Header.Set(Accept, AppJson)
 		return
 	}
 	reply, err := r.send(request)
@@ -168,7 +189,7 @@ func (r *Client) Delete(path string) (err error) {
 			Method: http.MethodDelete,
 			URL:    r.join(path),
 		}
-		request.Header.Set(auth.Header, r.token)
+		request.Header.Set(Accept, "")
 		return
 	}
 	reply, err := r.send(request)
@@ -206,17 +227,29 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
+		request.Header.Set(auth.Header, r.token)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
-		netErr := &net.OpError{}
-		if errors.As(err, &netErr) {
-			Log.Info(err.Error())
-			time.Sleep(time.Second * 10)
+		if err != nil {
+			netErr := &net.OpError{}
+			if errors.As(err, &netErr) {
+				Log.Info(err.Error())
+				time.Sleep(time.Second * 10)
+				continue
+			} else {
+				err = liberr.Wrap(err)
+				return
+			}
 		} else {
+			Log.Info(
+				fmt.Sprintf(
+					"|%d|  %s %s",
+					response.StatusCode,
+					request.Method,
+					request.URL.Path))
 			break
 		}
 	}
-	err = liberr.Wrap(err)
 	return
 }
 
@@ -244,6 +277,6 @@ func (r *Client) buildTransport() (err error) {
 // Join the URL.
 func (r *Client) join(path string) (parsedURL *url.URL) {
 	parsedURL, _ = url.Parse(r.baseURL)
-	parsedURL.Path = path
+	parsedURL.Path = pathlib.Join(parsedURL.Path, path)
 	return
 }

@@ -39,7 +39,7 @@ type TaskHandler struct {
 // AddRoutes adds routes.
 func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "tasks"))
+	routeGroup.Use(auth.Required("tasks"))
 	routeGroup.GET(TasksRoot, h.List)
 	routeGroup.GET(TasksRoot+"/", h.List)
 	routeGroup.POST(TasksRoot, h.Create)
@@ -52,6 +52,8 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(TaskBucketRoot, h.BucketUpload)
 	routeGroup.PUT(TaskBucketRoot, h.BucketUpload)
 	routeGroup.DELETE(TaskBucketRoot, h.BucketDelete)
+	routeGroup = e.Group("/")
+	routeGroup.Use(auth.Required("tasks.report"))
 	routeGroup.POST(TaskReportRoot, h.CreateReport)
 	routeGroup.PUT(TaskReportRoot, h.UpdateReport)
 	routeGroup.DELETE(TaskReportRoot, h.DeleteReport)
@@ -317,7 +319,7 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 		h.getFailed(ctx, result.Error)
 		return
 	}
-	h.content(ctx, &m.BucketOwner)
+	h.serveBucketGet(ctx, &m.BucketOwner)
 }
 
 // BucketUpload godoc
@@ -337,7 +339,7 @@ func (h TaskHandler) BucketUpload(ctx *gin.Context) {
 		return
 	}
 
-	h.upload(ctx, &m.BucketOwner)
+	h.serveBucketUpload(ctx, &m.BucketOwner)
 }
 
 // BucketDelete godoc

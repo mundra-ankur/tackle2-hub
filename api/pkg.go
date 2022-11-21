@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/controller/pkg/logging"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +28,14 @@ const (
 	Authorization = "Authorization"
 	ContentLength = "Content-Length"
 	ContentType   = "Content-Type"
+	Directory     = "X-Directory"
+)
+
+//
+// Header Values
+const (
+	DirectoryArchive = "archive"
+	DirectoryExpand  = "expand"
 )
 
 //
@@ -61,6 +68,6 @@ func All() []Handler {
 //
 // Handler.
 type Handler interface {
-	With(*gorm.DB, client.Client, auth.Provider)
+	With(*gorm.DB, client.Client)
 	AddRoutes(e *gin.Engine)
 }

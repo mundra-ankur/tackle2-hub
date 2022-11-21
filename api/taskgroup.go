@@ -31,7 +31,7 @@ type TaskGroupHandler struct {
 // AddRoutes adds routes.
 func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "tasks"))
+	routeGroup.Use(auth.Required("tasks"))
 	routeGroup.GET(TaskGroupsRoot, h.List)
 	routeGroup.GET(TaskGroupsRoot+"/", h.List)
 	routeGroup.POST(TaskGroupsRoot, h.Create)
@@ -288,7 +288,7 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 		return
 	}
 
-	h.content(ctx, &m.BucketOwner)
+	h.serveBucketGet(ctx, &m.BucketOwner)
 }
 
 // BucketUpload godoc
@@ -308,7 +308,7 @@ func (h TaskGroupHandler) BucketUpload(ctx *gin.Context) {
 		return
 	}
 
-	h.upload(ctx, &m.BucketOwner)
+	h.serveBucketUpload(ctx, &m.BucketOwner)
 }
 
 // BucketDelete godoc
