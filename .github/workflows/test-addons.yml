@@ -13,17 +13,13 @@ jobs:
       - uses: actions/checkout@v3
       - name: start-minikube
         uses: konveyor/tackle2-operator/.github/actions/start-minikube@main
-      - name: Build image in minikube
-        run: |
-          export SHELL=/bin/bash
-          eval $(minikube -p minikube docker-env)
-          make docker-build
       - name: install-tackle
         uses: konveyor/tackle2-operator/.github/actions/install-tackle@main
         with:
           tackle-hub-image: tackle2-hub:latest
           tackle-operator-index-image: quay.io/konveyor/tackle2-operator-index:test
           tackle-image-pull-policy: IfNotPresent
-
+      
       - name: test windup addon
         uses: konveyor/tackle2-addon-windup/.github/actions/test-e2e-windup@main
+      
